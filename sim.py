@@ -14,8 +14,12 @@ phase_levels = 2 ** n_bits   # 16 levels
 d = 0.5                       # Element spacing in wavelengths
 wavelength = 1.0            # unit wavelength
 k = 2 * np.pi / wavelength    # Wavenumber
-max_steering_angle = np.degrees(np.asin(wavelength / (N * d)))  # Maximum steering angle in radians
-print(f"Max steering angle: {max_steering_angle:.2f}°")
+
+# --- Bit breaking setup ---
+# Randomly select 3 elements to break
+broken_elements = [1, 4, 5]
+broken_bits = [0, 1, 2]
+broken_values = [0, 1, 1]
 
 def quantize_phase(phase):
     """
@@ -48,6 +52,22 @@ def steering_bit_array(steering_angle_deg):
         #print(f"Element {n}: Phase shift (rad) = {quantized_phases_rad[n]:.4f}, Decimal value = {decimal_value}")
         bit_array[n] = np.array(list(np.binary_repr(decimal_value, width=n_bits)), dtype=int)
     return bit_array
+
+def break_bit_array(bit_array):
+    """
+    Apply specific fixed bits to several locations in the array.
+    Inputs:
+        bit_array: N x n_bits array of 1s and 0s representing a 4-bit binary number for each element
+    Outputs:
+        N x n_bits array of 1s and 0s representing a 4-bit binary number for each element, with specific bits broken
+    """
+    # break 3 random bits in the array
+    broken_bit_array = np.copy(bit_array)
+    
+    for element, bit, value in zip(broken_elements, broken_bits, broken_values):
+        # Randomly select 3 bits to break
+        broken_bit_array[element, bit] = value
+    return broken_bit_array
 
 def array_factor_from_bits(scan_deg, bit_array):
     """
@@ -110,13 +130,17 @@ def init():
     return [line]
 
 def animate(i):
+    max_steering_angle = 60  # Maximum steering angle in degrees
     # angle step
     steering_step = 2 * max_steering_angle / n_frames
     # i is the frame number
-    steering_angle_deg = -1*max_steering_angle + i*steering_step  # Sweep from -60° to +60°
+    steering_angle_deg = -max_steering_angle + i * steering_step  # Sweep from -60° to +60°
+    #steering_angle_deg = -1*max_steering_angle + i*steering_step  # Sweep from -max_steering_angle to +max_steering_angle
     #print(f"Frame {i}: Steering Angle: {steering_angle_deg:.1f}°")
     #af = array_factor_fully_formed(scan_deg, steering_angle_deg)
     bit_array = steering_bit_array(steering_angle_deg)
+    # Break some bits in the array
+    bit_array = break_bit_array(bit_array)
     af = array_factor_from_bits(scan_deg, bit_array)
     line.set_data(scan_rad, af)
     ax.set_title(f"Steering Angle: {steering_angle_deg:.1f}°", va='bottom')
