@@ -6,6 +6,7 @@ This script simulates the beamforming of a uniform linear array (ULA) with 4-bit
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from correction import valid_integers, modular_distance, closest_integer
 
 # --- Array and beamforming setup ---
 N = 8                         # Number of elements in ULA
@@ -14,7 +15,7 @@ phase_levels = 2 ** n_bits   # 16 levels
 d = 0.5                       # Element spacing in wavelengths
 wavelength = 1.0            # unit wavelength
 k = 2 * np.pi / wavelength    # Wavenumber
-n_stuck = 4               # Number of stuck bits
+n_stuck = 5               # Number of stuck bits
 
 # --- Bit breaking setup ---
 # Randomly select 3 elements to break
@@ -24,12 +25,25 @@ n_stuck = 4               # Number of stuck bits
 
 def param_break_n_bits_random(n_broken_bits):
     broken_ids = np.random.choice(N * n_bits, n_broken_bits, replace=False)
+    # sort the broken ids
+    broken_ids = np.sort(broken_ids)
     broken_elements = broken_ids // n_bits  # Element index
     broken_bits = broken_ids % n_bits
     broken_values = [np.random.choice([0, 1]) for _ in range(n_broken_bits)]
     return broken_elements, broken_bits, broken_values
 
 broken_elements, broken_bits, broken_values = param_break_n_bits_random(n_stuck)
+'''
+broken_elements = np.array(
+    [1]
+)
+broken_bits = np.array(
+    [n_bits - 1]
+)
+broken_values = np.array(
+    [0]
+)
+'''
 
 def amplitude_to_dB(amplitude):
     """
@@ -88,6 +102,35 @@ def break_bit_array(bit_array, broken_elements=broken_elements, broken_bits=brok
         # Randomly select 3 bits to break
         broken_bit_array[element, bit] = value
     return broken_bit_array
+
+def optimise_bit_array(bit_array, broken_elements=broken_elements, broken_bits=broken_bits, broken_values=broken_values):
+    # sort the broken elements
+    broken_elements = np.array(broken_elements)
+    broken_bits = np.array(broken_bits)
+    broken_values = np.array(broken_values)
+    sorted_indices = np.argsort(broken_elements)
+    broken_elements = broken_elements[sorted_indices]
+    broken_bits = broken_bits[sorted_indices]
+    broken_values = broken_values[sorted_indices]
+    # for every element
+    for i in range(len(bit_array)):
+        # collect all the broken bits and values
+        broken_bits_i = broken_bits[broken_elements == i]
+        broken_values_i = broken_values[broken_elements == i]
+        # if there are no broken bits, continue
+        if broken_bits_i.size == 0:
+            continue
+        # if there are broken bits:
+        # use the closest_integer function to find the closest integer to the desired value
+        # convert the current row into a decimal.
+        decimal_value = int(''.join(map(str, bit_array[i]))[::-1], 2)
+        closest = closest_integer(decimal_value, len(bit_array[0]), broken_bits_i, broken_values_i)
+        # convert the closest integer into a binary number
+        binary_value = np.array(list(np.binary_repr(closest, width=n_bits)), dtype=int)
+        # update the bit array with the new value
+        bit_array[i] = binary_value
+    return bit_array
+
 
 def array_factor_from_bits(scan_deg, bit_array):
     """
@@ -248,6 +291,7 @@ plt.savefig("avg_cost_function.png", dpi=300, bbox_inches='tight')
 plt.show()
 '''
 
+'''
 # plot a specific beam pattern, steering angle = 0
 steering_angle_deg = 0
 scan_deg = np.arange(-180, 181)  # Scan angles from -90° to +90°
@@ -286,6 +330,7 @@ ax.set_ylabel("Array Factor (linear scale)", labelpad=20)
 ax.set_title(f"Beam Steering with 4-bit 1x8 Linear Array\n{n_stuck} bits stuck, Steering Angle: {steering_angle_deg:.1f}°", pad = 20)
 plt.savefig(f"beamforming_{n_stuck}_bits_stuck.png", dpi=300, bbox_inches='tight')
 plt.show()
+'''
     
 
 # --- Animation setup ---
@@ -296,9 +341,10 @@ scan_rad = np.radians(scan_deg)
 line0 = ax.plot([], [], lw=1, color='k', label="ideal array factor")[0]
 line1 = ax.plot([], [], lw=1, color='b', label="quantised phases")[0]
 line2 = ax.plot([], [], lw=1, color='r', label="broken bit array")[0]
+line_optim = ax.plot([], [], lw=1, color='g', label="optimised bit array")[0]
 ax.legend(loc='upper right', fontsize=8, frameon=False, bbox_to_anchor=(1.1, 1.1), handlelength=1.5, handleheight=0.5, borderpad=0.5)
 max_steering_angle = 90  # Maximum steering angle in degrees
-n_frames = 30  # Number of frames in the animation
+n_frames = 90  # Number of frames in the animation
 
 ax.set_ylim(0, 1)
 ax.set_ylabel("Array Factor (linear scale)", labelpad=20)
@@ -310,7 +356,8 @@ def init():
     line0.set_data([], [])
     line1.set_data([], [])
     line2.set_data([], [])
-    return [line0, line1, line2]
+    line_optim.set_data([], [])
+    return [line0, line1, line2, line_optim]
 
 def animate(i):
     step = 2 * max_steering_angle / n_frames  # Step size for steering angle
@@ -322,14 +369,17 @@ def animate(i):
     af0 = ideal_af_lookup(steering_angle_deg, scan_deg)
     af1 = array_factor_fully_formed(scan_deg, steering_angle_deg)
     bit_array = steering_bit_array(steering_angle_deg)
+    bit_array_optim = optimise_bit_array(bit_array)
     # Break some bits in the array
     bit_array = break_bit_array(bit_array)
     af2 = array_factor_from_bits(scan_deg, bit_array)
+    af_optim = array_factor_from_bits(scan_deg, bit_array_optim)
     line0.set_data(scan_rad, af0)
     line1.set_data(scan_rad, af1)
     line2.set_data(scan_rad, af2)
+    line_optim.set_data(scan_rad, af_optim)
     ax.set_title(f"{n_stuck} bits stuck, Steering Angle: {steering_angle_deg:.1f}°", va='bottom', pad=20)
-    return [line0, line1, line2]
+    return [line0, line1, line2, line_optim]
 
 ani = animation.FuncAnimation(
     # interval is the time between frames in milliseconds
