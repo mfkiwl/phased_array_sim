@@ -2,13 +2,28 @@ import numpy as np
 from closest_int import closest_integer
 
 def amplitude_to_dB(amplitude):
+    if amplitude == 0:
+        amplitude = 1e-10
     return 20 * np.log10(amplitude)
+
+def amplitude_to_dB_list(amplitude_list):
+    amplitude_list = np.where(amplitude_list == 0, 1e-10, amplitude_list)  # avoid log(0)
+    dB_list = 20 * np.log10(amplitude_list)
+    return dB_list
 
 def dB_to_amplitude(dB):
     return 10 ** (dB / 20)
-
+ 
 def power_to_dB(power):
+    # if power is 0, change it to 1e-10 to avoid log(0)
+    if power == 0:
+        power = 1e-10
     return 10 * np.log10(power)
+
+def power_to_dB_list(power_list):
+    power_list = np.where(power_list == 0, 1e-10, power_list)  # avoid log(0)
+    dB_list = 10 * np.log10(power_list)
+    return dB_list
 
 def dB_to_power(dB):
     return 10 ** (dB / 10)
@@ -231,6 +246,9 @@ def af_to_distribution(af_list):
 def kl_divergence(af_ideal, af_actual):
     ideal_dist = af_to_distribution(af_ideal)
     actual_dist = af_to_distribution(af_actual)
+    # avoid division by zero
+    ideal_dist = np.where(ideal_dist == 0, 1e-10, ideal_dist)
+    actual_dist = np.where(actual_dist == 0, 1e-10, actual_dist)
     # calculate the Kullback-Leibler divergence
     kl = np.sum(ideal_dist * np.log(ideal_dist / actual_dist))
     return kl
