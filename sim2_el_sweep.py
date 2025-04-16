@@ -17,8 +17,8 @@ steering_angle = 0
 ideal_phase_list = au.ideal_phase_list(n_elements, steering_angle)
 af0 = au.phase_list_to_af_list(ideal_phase_list, scan_rad)
 af0_dB = 20 * np.log10(af0)
-ideal_phase_list[0] = np.pi
-ideal_phase_list[1] = np.pi
+#ideal_phase_list[0] = np.pi
+#ideal_phase_list[1] = np.pi
 
 fig = plt.figure(figsize=(6, 9))
 gs = GridSpec(2, 1, height_ratios=[6, 3])  # 6 for ax, 3 for ax2
@@ -26,7 +26,7 @@ gs = GridSpec(2, 1, height_ratios=[6, 3])  # 6 for ax, 3 for ax2
 ax = fig.add_subplot(gs[0], polar=True)
 ax.plot(scan_rad, af0, lw=1, color='k', label="original pattern")
 line1 = ax.plot([], [], lw=1, color='r', label="altered pattern")[0]
-text =ax.text(0.1, 0.3, '', transform=ax.transAxes, fontsize=12, color='k')
+text =ax.text(0.05, 0.35, '', transform=ax.transAxes, fontsize=12, color='k')
 ax.legend(loc='upper right', fontsize=8, frameon=False, bbox_to_anchor=(1.1, 1.1), handlelength=1.5, handleheight=0.5, borderpad=0.5)
 ax.set_ylim(0, 1)
 ax.set_ylabel("Array Factor (linear scale)", labelpad=30)
@@ -43,7 +43,7 @@ ax2.plot(scan_deg, af0_dB, lw=1, color='k', label="original pattern")
 ax2.set_xlim(-90, 90)
 ax2.set_ylim(-50, 0)
 ax2.set_xlabel("Angle ($^\\circ$)")
-ax2.set_ylabel("Gain (dB)")
+ax2.set_ylabel("Relative Gain (dB)")
 ax2.grid()
 dB1 = ax2.plot([], [], lw=1, color='r', label="altered pattern")[0]
 
@@ -64,12 +64,17 @@ def animate(i):
     altered_phase_list[changing_el] += phase_shift
     af1 = au.phase_list_to_af_list(altered_phase_list, scan_rad)
     kl = au.kl_divergence(af0, af1)
-    # annotate the value
-    text.set_text(f"KL: {kl:.2f}")
     line1.set_data(scan_rad, af1)
 
     af1_dB = 20 * np.log10(af1)
     dB1.set_data(scan_deg, af1_dB)
+
+    # loss at steering angle
+    angle_index = np.where(scan_deg == steering_angle)[0][0]
+    loss = af0_dB[angle_index] - af1_dB[angle_index]
+    # annotate the loss
+    text.set_text(f"KL: {kl:.2f}\nLoss: {-loss:.2f} dB")
+
     
     ax.set_title(f"el {changing_el} at {phase_shift*180.0/np.pi:.1f}°", va='bottom', pad=20)
     return [ line1, text, dB1]
