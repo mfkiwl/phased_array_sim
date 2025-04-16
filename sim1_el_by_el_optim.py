@@ -29,7 +29,7 @@ line0 = ax.plot([], [], lw=1, color='k', label="ideal array factor")[0]
 line1 = ax.plot([], [], lw=1, color='b', label="quantised phases")[0]
 line2 = ax.plot([], [], lw=1, color='r', label="broken bit array")[0]
 line_optim = ax.plot([], [], lw=1, color='g', label="optimised bit array")[0]
-text = ax.text(0.1, 0.3, '', transform=ax.transAxes, fontsize=12, color='k')
+text = ax.text(0.05, 0.35, '', transform=ax.transAxes, fontsize=12, color='k')
 ax.legend(loc='upper right', fontsize=8, frameon=False, bbox_to_anchor=(1.1, 1.1), handlelength=1.5, handleheight=0.5, borderpad=0.5)
 ax.set_ylim(0, 1)
 ax.set_ylabel("Array Factor (linear scale)", labelpad=30)
@@ -46,7 +46,7 @@ ax2 = fig.add_subplot(gs[1])
 ax2.set_xlim(-90, 90)
 ax2.set_ylim(-50, 0)
 ax2.set_xlabel("Angle ($^\\circ$)")
-ax2.set_ylabel("Gain (dB)")
+ax2.set_ylabel("Relative Gain (dB)")
 ax2.grid()
 dB0 = ax2.plot([], [], lw=1, color='k', label="ideal array factor")[0]
 dB1 = ax2.plot([], [], lw=1, color='b', label="quantised phases")[0]
@@ -94,7 +94,7 @@ def animate(i):
     kl02 = au.kl_divergence(af0, af2)
     kl_optim = au.kl_divergence(af0, af_optim)
     # annotate the value
-    text.set_text(f"KL_quant: {kl01:.2f}\nKL_broken: {kl02:.2f}\nKL_optim: {kl_optim:.2f}")
+    #text.set_text(f"KL_quant: {kl01:.2f}\nKL_broken: {kl02:.2f}\nKL_optim: {kl_optim:.2f}")
 
     # dB scale
     af0_dB = au.amplitude_to_dB(af0)
@@ -105,6 +105,15 @@ def animate(i):
     dB1.set_data(scan_deg, af1_dB)
     dB2.set_data(scan_deg, af2_dB)
     dB_optim.set_data(scan_deg, af_optim_dB)
+
+    # losses at the steering angle
+    angle_index = np.where(scan_deg == steering_angle_deg)[0][0]
+    loss01 = af0_dB[angle_index] - af1_dB[angle_index]
+    loss02 = af0_dB[angle_index] - af2_dB[angle_index]
+    loss_optim = af0_dB[angle_index] - af_optim_dB[angle_index]
+    # annotate the value
+    text.set_text(f"KL_quant: {kl01:.2f}\nKL_broken: {kl02:.2f}\nKL_optim: {kl_optim:.2f}\n"
+                  f"L_quant: {-loss01:.2f} dB\nL_broken: {-loss02:.2f} dB\nL_optim: {-loss_optim:.2f} dB")
 
     # title
     ax.set_title(f"{n_stuck} bits stuck, Steering Angle: {steering_angle_deg:.1f}°", va='bottom', pad=30)
