@@ -147,6 +147,8 @@ def phase_list_to_af_list(phase_list, scan_angles=np.deg2rad(np.arange(0, 361, 1
         af_list[k] = af
     return np.abs(af_list) / len(phase_list)  # Normalise the antenna factor
 
+
+## Breaking and fixing the array
 def random_select_broken_bits(n_elements, n_bits, n_broken_bits, mode=0):
     '''
     Randomly select broken bits. 
@@ -217,4 +219,19 @@ def el_by_el_optim(unbroken_bit_array, broken_elements, broken_bits, broken_valu
         optim_bit_array[i] = binary_word
     return optim_bit_array
 
+
+## Evaluation utils
+def af_to_distribution(af_list):
+    n = len(af_list)
+    # convert the af_list such that the total sum is 1
+    output = np.array(af_list) ** 2
+    output = output / np.sum(output)
+    return output
+
+def kl_divergence(af_ideal, af_actual):
+    ideal_dist = af_to_distribution(af_ideal)
+    actual_dist = af_to_distribution(af_actual)
+    # calculate the Kullback-Leibler divergence
+    kl = np.sum(ideal_dist * np.log(ideal_dist / actual_dist))
+    return kl
 
