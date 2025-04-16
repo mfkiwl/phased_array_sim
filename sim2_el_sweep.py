@@ -16,9 +16,7 @@ scan_rad = np.radians(scan_deg)
 steering_angle = 0
 ideal_phase_list = au.ideal_phase_list(n_elements, steering_angle)
 af0 = au.phase_list_to_af_list(ideal_phase_list, scan_rad)
-af0_dB = 20 * np.log10(af0)
-#ideal_phase_list[0] = np.pi
-#ideal_phase_list[1] = np.pi
+af0_dB = au.amplitude_to_dB_list(af0)
 
 fig = plt.figure(figsize=(6, 9))
 gs = GridSpec(2, 1, height_ratios=[6, 3])  # 6 for ax, 3 for ax2
@@ -66,7 +64,7 @@ def animate(i):
     kl = au.kl_divergence(af0, af1)
     line1.set_data(scan_rad, af1)
 
-    af1_dB = 20 * np.log10(af1)
+    af1_dB = au.amplitude_to_dB_list(af1)
     dB1.set_data(scan_deg, af1_dB)
 
     # loss at steering angle
