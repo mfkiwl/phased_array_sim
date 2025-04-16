@@ -89,5 +89,5 @@ ani = animation.FuncAnimation(
 )
 
 # To save as a gif: 
-ani.save(f"visuals\\changing_el_{changing_el}.gif", writer='pillow')
+ani.save(f"visuals\\sweep\\changing_el_{changing_el}.gif", writer='pillow')
 plt.show()

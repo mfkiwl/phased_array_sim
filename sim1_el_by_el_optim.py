@@ -136,5 +136,5 @@ ani = animation.FuncAnimation(
 )
 
 # To save as a gif: 
-ani.save(f"visuals\\beamforming_{n_stuck}_bits_stuck.gif", writer='pillow')
+ani.save(f"visuals\\optim\\beamforming_{n_stuck}_bits_stuck.gif", writer='pillow')
 plt.show()
