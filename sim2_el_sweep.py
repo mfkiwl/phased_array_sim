@@ -13,8 +13,9 @@ changing_el = 2  # The element that is changing
 n_frames = 40  # Number of frames in the animation
 scan_deg = np.arange(-90, 91)  # Scan angles from -90° to +90°
 scan_rad = np.radians(scan_deg)
-steering_angle = 0
-ideal_phase_list = au.ideal_phase_list(n_elements, steering_angle)
+steering_angle_deg = 0
+steering_angle_rad = np.radians(steering_angle_deg)
+ideal_phase_list = au.ideal_phase_list(n_elements, steering_angle_rad)
 af0 = au.phase_list_to_af_list(ideal_phase_list, scan_rad)
 af0_dB = au.amplitude_to_dB_list(af0)
 
@@ -34,6 +35,8 @@ ax.set_title("Beam Steering with 4-bit 1x8 Linear Array\n", pad = 30)
 r = np.linspace(0,1,100)
 ax.plot(np.full_like(r, np.pi/2), r, color='k', lw=1, ls='-')
 ax.plot(np.full_like(r, -np.pi/2), r, color='k', lw=1, ls='-')
+# add a black dotted line at the steering angle
+ax.plot(np.full_like(r, steering_angle_rad), r, color='k', lw=1, ls='--', label="steering angle")
 
 # cartesian dB plot
 ax2 = fig.add_subplot(gs[1])
@@ -44,6 +47,8 @@ ax2.set_xlabel("Angle ($^\\circ$)")
 ax2.set_ylabel("Relative Gain (dB)")
 ax2.grid()
 dB1 = ax2.plot([], [], lw=1, color='r', label="altered pattern")[0]
+dB_list = np.linspace(-50, 0, 100)  # dB scale
+ax2.plot(np.full_like(dB_list, steering_angle_deg), dB_list, color='k', lw=1, ls='--')
 
 
 def init():
@@ -68,7 +73,7 @@ def animate(i):
     dB1.set_data(scan_deg, af1_dB)
 
     # loss at steering angle
-    angle_index = np.where(scan_deg == steering_angle)[0][0]
+    angle_index = np.where(scan_deg == steering_angle_deg)[0][0]
     loss = af0_dB[angle_index] - af1_dB[angle_index]
     # annotate the loss
     text.set_text(f"KL: {kl:.2f}\nLoss: {-loss:.2f} dB")
