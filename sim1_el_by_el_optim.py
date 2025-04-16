@@ -30,7 +30,6 @@ line1 = ax.plot([], [], lw=1, color='b', label="quantised phases")[0]
 line2 = ax.plot([], [], lw=1, color='r', label="broken bit array")[0]
 line_optim = ax.plot([], [], lw=1, color='g', label="optimised bit array")[0]
 text = ax.text(0.05, 0.35, '', transform=ax.transAxes, fontsize=12, color='k')
-ax.legend(loc='upper right', fontsize=8, frameon=False, bbox_to_anchor=(1.1, 1.1), handlelength=1.5, handleheight=0.5, borderpad=0.5)
 ax.set_ylim(0, 1)
 ax.set_ylabel("Array Factor (linear scale)", labelpad=30)
 # ax.set_theta_offset(np.pi/2)
@@ -39,6 +38,9 @@ ax.set_title("Beam Steering with 4-bit 1x8 Linear Array\n", pad = 20)
 r = np.linspace(0,1,100)
 ax.plot(np.full_like(r, np.pi/2), r, color='k', lw=1, ls='-')
 ax.plot(np.full_like(r, -np.pi/2), r, color='k', lw=1, ls='-')
+# add a black dotted line at the steering angle
+steer_line = ax.plot([], [], color='k', lw=1, ls='--', label="steering angle")[0]
+ax.legend(loc='upper right', fontsize=8, frameon=False, bbox_to_anchor=(1.1, 1.1), handlelength=1.5, handleheight=0.5, borderpad=0.5)
 
 
 # cartesian dB plot
@@ -52,6 +54,8 @@ dB0 = ax2.plot([], [], lw=1, color='k', label="ideal array factor")[0]
 dB1 = ax2.plot([], [], lw=1, color='b', label="quantised phases")[0]
 dB2 = ax2.plot([], [], lw=1, color='r', label="broken bit array")[0]
 dB_optim = ax2.plot([], [], lw=1, color='g', label="optimised bit array")[0]
+steer_line2 = ax2.plot([], [], color='k', lw=1, ls='--')[0]
+dB_list = np.linspace(-50, 0, 100)  # dB scale
 
 def init():
     # animate must take a list
@@ -60,12 +64,14 @@ def init():
     line2.set_data([], [])
     line_optim.set_data([], [])
     text.set_text('')
+    steer_line.set_data([], [])
 
     dB0.set_data([], [])
     dB1.set_data([], [])
     dB2.set_data([], [])
     dB_optim.set_data([], [])
-    return [line0, line1, line2, line_optim, text, dB0, dB1, dB2, dB_optim]
+    steer_line2.set_data([], [])
+    return [line0, line1, line2, line_optim, text, steer_line, dB0, dB1, dB2, dB_optim, steer_line2]
 
 def animate(i):
     # i is the frame number
@@ -88,6 +94,8 @@ def animate(i):
     line1.set_data(scan_rad, af1)
     line2.set_data(scan_rad, af2)
     line_optim.set_data(scan_rad, af_optim)
+    # steering line
+    steer_line.set_data(np.full_like(r, steering_angle_rad), r)
 
     # KL divergence
     kl01 = au.kl_divergence(af0, af1)
@@ -105,6 +113,8 @@ def animate(i):
     dB1.set_data(scan_deg, af1_dB)
     dB2.set_data(scan_deg, af2_dB)
     dB_optim.set_data(scan_deg, af_optim_dB)
+    # steering line
+    steer_line2.set_data(np.full_like(dB_list, steering_angle_deg), dB_list)
 
     # losses at the steering angle
     angle_index = np.where(scan_deg == steering_angle_deg)[0][0]
@@ -117,7 +127,7 @@ def animate(i):
 
     # title
     ax.set_title(f"{n_stuck} bits stuck, Steering Angle: {steering_angle_deg:.1f}°", va='bottom', pad=30)
-    return [line0, line1, line2, line_optim, text, dB0, dB1, dB2, dB_optim]
+    return [line0, line1, line2, line_optim, text, steer_line, dB0, dB1, dB2, dB_optim, steer_line2]
 
 ani = animation.FuncAnimation(
     # interval is the time between frames in milliseconds
