@@ -7,7 +7,7 @@ from matplotlib.gridspec import GridSpec
 # --- Parameters ---
 n_elements = 8  # Number of elements in the array
 n_bits = 4  # Number of bits per element
-changing_el = 2  # The element that is changing
+changing_el = 3  # The element that is changing
 
 # --- Animation setup ---
 n_frames = 40  # Number of frames in the animation
@@ -18,6 +18,10 @@ steering_angle_rad = np.radians(steering_angle_deg)
 ideal_phase_list = au.ideal_phase_list(n_elements, steering_angle_rad)
 af0 = au.phase_list_to_af_list(ideal_phase_list, scan_rad)
 af0_dB = au.amplitude_to_dB_list(af0)
+# set some other elements to bad
+ideal_phase_list[0] = np.pi/2
+ideal_phase_list[1] = np.pi/2
+ideal_phase_list[2] = np.pi/2
 
 fig = plt.figure(figsize=(6, 9))
 gs = GridSpec(2, 1, height_ratios=[6, 3])  # 6 for ax, 3 for ax2
