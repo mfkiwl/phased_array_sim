@@ -253,3 +253,8 @@ def kl_divergence(af_ideal, af_actual):
     kl = np.sum(ideal_dist * np.log(ideal_dist / actual_dist))
     return kl
 
+def MSE(af_ideal, af_actual):
+    # Calculate the Mean Squared Error between the ideal and actual antenna factors
+    mse = np.mean((af_ideal - af_actual) ** 2)
+    return mse
+
