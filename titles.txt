@@ -1,0 +1,35 @@
+try sweep more parameters
+
+
+lit review title and abstract
+
+1. self repairing beamforming arrays
+2. 
+
+
+
+where i could submit
+
+letter: 5 pages double column (target)
+because problem is simple to describe and solution shouldn't take much space
+
+- look at literature and find where similar papers appear. 
+Look at that journal, author instructions, format...
+Usually IEEE, wireless comm, _____ correspondence
+Number of plots at the end: think about how many (e.g. 4-6 result plots)
+Sometimes can jam more curves in one figure, but don't overdo it (makes it hard to appreciate each message)
+
+
+
+
+paper: (can just get inspo from related papers)
+abstract
+intro (key contrib)
+sys model (problem statement first physical system then more abstractly)
+proposed solution
+results
+conclusion
+
+
+
+

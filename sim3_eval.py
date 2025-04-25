@@ -13,6 +13,7 @@ n_bits = 4  # Number of bits per element
 #n_stuck = 3  # Number of bits stuck (0 or 1)
 scan_deg = np.arange(-90, 91)  # Scan angles from -90° to +90° in degrees
 scan_rad = np.radians(scan_deg)  # Scan angles from -90° to +90° in radians
+beamwidth = 14.3 # in degrees
 
 def average_losses(n_elements=8, n_bits=4, n_stuck=3, trials=100):
     # for every trial, randomly select n_broken_bits bits to be stuck, then calculate the average KL_divergence over all steering angles
@@ -30,7 +31,7 @@ def average_losses(n_elements=8, n_bits=4, n_stuck=3, trials=100):
         loss_quant_list = []
         loss_broken_list = []
         loss_optim_list = []
-        for steering_angle_deg in range(-90, 91):
+        for steering_angle_deg in range(-60, 61):
             steering_angle_rad = np.radians(steering_angle_deg)
             # Calculate all the array factors and KL_divergences
             ideal_phase_list = au.ideal_phase_list(n_elements, steering_angle_rad)
@@ -44,9 +45,12 @@ def average_losses(n_elements=8, n_bits=4, n_stuck=3, trials=100):
             optim_phase_list = au.bit_array_to_phase_list(optim_bit_array)
             af2 = au.phase_list_to_af_list(broken_phase_list, scan_rad)
             af_optim = au.phase_list_to_af_list(optim_phase_list, scan_rad)
-            kl01 = au.kl_divergence(af0, af1)
-            kl02 = au.kl_divergence(af0, af2)
-            kl_optim = au.kl_divergence(af0, af_optim)
+            #kl01 = au.kl_divergence(af0, af1)
+            #kl02 = au.kl_divergence(af0, af2)
+            #kl_optim = au.kl_divergence(af0, af_optim)
+            kl01 = au.MSE(af0, af1)
+            kl02 = au.MSE(af0, af2)
+            kl_optim = au.MSE(af0, af_optim)
 
             # dB scale
             af0_dB = au.amplitude_to_dB_list(af0)
@@ -55,10 +59,13 @@ def average_losses(n_elements=8, n_bits=4, n_stuck=3, trials=100):
             af_optim_dB = au.amplitude_to_dB_list(af_optim)
 
             # losses at the steering angle
-            angle_index = np.where(scan_deg == steering_angle_deg)[0][0]
-            loss01 = af1_dB[angle_index] - af0_dB[angle_index]
-            loss02 = af2_dB[angle_index] - af0_dB[angle_index]
-            loss_optim = af_optim_dB[angle_index] - af0_dB[angle_index]
+            angle_index = np.where((scan_deg >= steering_angle_deg - beamwidth/2.0) & (scan_deg <= steering_angle_deg + beamwidth/2.0))[0]
+            #loss01 = af1_dB[angle_index] - af0_dB[angle_index]
+            #loss02 = af2_dB[angle_index] - af0_dB[angle_index]
+            #loss_optim = af_optim_dB[angle_index] - af0_dB[angle_index]
+            loss01 = au.MSE(af0[angle_index], af1[angle_index])
+            loss02 = au.MSE(af0[angle_index], af2[angle_index])
+            loss_optim = au.MSE(af0[angle_index], af_optim[angle_index])
 
             KL_quant_list.append(kl01)
             KL_broken_list.append(kl02)
@@ -87,8 +94,8 @@ def average_losses(n_elements=8, n_bits=4, n_stuck=3, trials=100):
 
 
 # --- Main function ---
-n_bits_broken_list = np.arange(1, 8)
-n_trials = 100
+n_bits_broken_list = np.arange(1, 32)
+n_trials = 50
 avg_KL_quantised_list = []
 avg_loss_quantised_list = []
 avg_KL_broken_list = []
@@ -112,17 +119,17 @@ fig.subplots_adjust(hspace=0.4)  # Adjust space between subplots
 axs[0].plot(n_bits_broken_list, avg_KL_quantised_list, label='Quantised', marker='x', color='blue')
 axs[0].plot(n_bits_broken_list, avg_KL_broken_list, label='Broken', marker='x', color='red')
 axs[0].plot(n_bits_broken_list, avg_KL_optim_list, label='Optimised', marker='x', color='green')
-axs[0].set_title('Average KL Divergence')
+axs[0].set_title('Average MSE')
 axs[0].set_xlabel('Number of Stuck Bits')
-axs[0].set_ylabel('Entropy (nats)')
+axs[0].set_ylabel('Energy')
 axs[0].legend()
 axs[0].grid()
 axs[1].plot(n_bits_broken_list, avg_loss_quantised_list, label='Quantised', marker='x', color='blue')
 axs[1].plot(n_bits_broken_list, avg_loss_broken_list, label='Broken', marker='x', color='red')
 axs[1].plot(n_bits_broken_list, avg_loss_optim_list, label='Optimised', marker='x', color='green')
-axs[1].set_title('Average Loss')
+axs[1].set_title('Main Beam MSE')
 axs[1].set_xlabel('Number of Stuck Bits')
-axs[1].set_ylabel('Relative Gain (dB)')
+axs[1].set_ylabel('Energy')
 axs[1].legend()
 axs[1].grid()
 # Save the figure
