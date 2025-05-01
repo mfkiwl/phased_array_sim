@@ -258,3 +258,9 @@ def MSE(af_ideal, af_actual):
     mse = np.mean((af_ideal - af_actual) ** 2)
     return mse
 
+def normalised_SE(af_ideal, af_actual):
+    # Calculate the normalised Mean Squared Error between the ideal and actual antenna factors
+    se = np.sum((af_ideal - af_actual) ** 2)
+    norm_se = se / np.sum(af_ideal ** 2)
+    return norm_se
+
