@@ -80,3 +80,13 @@ try to set the lit rev paragraph in the report, start putting in the papers that
 Use the paper i gave Emanuelle as a guideline. 
 for every reference you find, find the contribution paragraph. Id the problem and contrib. 
 Add my contribution. 
+
+
+
+
+
+Send emanuelle a draft of the paper. 
+    Write the system model. (how do i make one?)
+    Then write the short spiel of the literature in relation of my system model. 
+    Then write the story as we go. 
+
