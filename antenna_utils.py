@@ -264,4 +264,11 @@ def normalised_SE(af_ideal, af_actual):
     norm_se = se / np.sum(af_ideal ** 2)
     return norm_se
 
+def PBP(af_list, scan_rads, steering_angle_rad):
+    mbp = af_list[np.argmin(np.abs(scan_rads - steering_angle_rad))]
+    return 20* np.log10(mbp)
 
+def PSSL(af_list, scan_rads, steering_angle_rad, beamwidth_rad):
+    # Calculate the peak side lobe level
+    pssl = np.max(af_list[np.abs(scan_rads - steering_angle_rad) > beamwidth_rad])
+    return 20 * np.log10(pssl)

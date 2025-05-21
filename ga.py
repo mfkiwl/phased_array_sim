@@ -15,9 +15,12 @@ STAGNATION_LIMIT = 20  # Number of generations to wait before stopping
 GENE_LENGTH = 32  # Length of binary string
 
 n_elements = 8  # Number of elements in the array
+beamwidth_deg = 14.5  # in degrees
+beamwidth_rad = np.radians(beamwidth_deg)  # Convert to radians
 n_bits = 4  # Number of bits per element
-n_stuck = 3  # Number of bits stuck (0 or 1)
-broken_elements, broken_bits, broken_values = np.array([0, 3, 5]), np.array([2, 1, 3]), np.array([1, 1, 1])
+n_stuck = 5  # Number of bits stuck (0 or 1)
+#broken_elements, broken_bits, broken_values = np.array([0, 3, 5]), np.array([2, 1, 3]), np.array([1, 1, 1])
+broken_elements, broken_bits, broken_values = np.array([0, 2, 3, 5, 6]), np.array([2, 1, 3, 3, 1]), np.array([1, 1, 1, 1, 1])
 steering_angle_deg = 0  # Steering angle in degrees
 steering_angle_rad = np.radians(steering_angle_deg)  # Convert to radians
 scan_deg = np.arange(-90, 91)  # Scan angles from -90° to +90°
@@ -47,7 +50,7 @@ def bit_array_to_string(bit_array):
     return ''.join(str(bit) for row in bit_array for bit in row)
 
 # === FITNESS FUNCTION ===
-def fitness_function(binary_string):
+def fitness_function(binary_string, af_ideal, scan_rad, steering_angle_rad, beamwidth_rad):
     """minimize the difference between the ideal and broken array factors."""
     bit_array = string_to_bit_array(binary_string)
     broken_bit_array = au.break_bit_array(bit_array, broken_elements, broken_bits, broken_values)
@@ -55,7 +58,14 @@ def fitness_function(binary_string):
     af_broke = au.phase_list_to_af_list(broken_phase_list, scan_rad)
     # normalised MSE fitness function
     norm_se = au.normalised_SE(af_ideal, af_broke)
-    return norm_se
+    # Peak Beam Power is the af_broke where the steering angle is
+    # steering_angle_rad
+    #peak_beam_power = af_broke[np.argmin(np.abs(scan_rad - steering_angle_rad))]
+    peak_beam_power = au.PBP(af_broke, scan_rad, steering_angle_rad)
+    # Peak Side lobe level
+    #peak_side_lobe_level = np.max(af_broke[np.abs(scan_rad - steering_angle_rad) > beamwidth_rad])
+    peak_side_lobe_level = au.PSSL(af_broke, scan_rad, steering_angle_rad, beamwidth_rad)
+    return  - 2* peak_beam_power + 0.1* norm_se + 1* peak_side_lobe_level
 
 # === GENETIC OPERATORS ===
 def generate_individual():
@@ -83,13 +93,13 @@ def crossover(parent1, parent2):
     return parent1, parent2
 
 # === MAIN GA LOOP ===
-def genetic_algorithm():
+def genetic_algorithm(af_ideal, scan_rad, steering_angle_rad, beamwidth_rad):
     population = [generate_individual() for _ in range(POPULATION_SIZE)]
 
     stag_count = 0
     best_fitness = float('inf')
     for gen in range(GENERATIONS):
-        fitnesses = [fitness_function(ind) for ind in population]
+        fitnesses = [fitness_function(ind, af_ideal, scan_rad, steering_angle_rad, beamwidth_rad) for ind in population]
         current_best_fitness = min(fitnesses)
         
         # check stop criterion
@@ -101,7 +111,7 @@ def genetic_algorithm():
 
         # check stagnation
         if stag_count >= STAGNATION_LIMIT:
-            print(f"Stopping early at generation {gen} due to stagnation.")
+            #print(f"Stopping early at generation {gen} due to stagnation.")
             break
 
         # Select top 10% elite
@@ -122,17 +132,17 @@ def genetic_algorithm():
         population = next_generation
 
         # Optional: print best result each generation
-        best = min(population, key=fitness_function)
-        print(f"Generation {gen}: Best = {best} (Fitness = {fitness_function(best)})")
+        best = min(population, key=lambda val: fitness_function(val, af_ideal, scan_rad, steering_angle_rad, beamwidth_rad))
+        #print(f"Generation {gen}: Best = {best} (Fitness = {fitness_function(best, af_ideal, scan_rad, steering_angle_rad, beamwidth_rad)})")
 
     # Final best
-    best = min(population, key=fitness_function)
-    print(f"\nBest solution: {best} (Fitness = {fitness_function(best)})")
+    best = min(population, key=lambda val: fitness_function(val, af_ideal, scan_rad, steering_angle_rad, beamwidth_rad))
+    #print(f"\nBest solution: {best} (Fitness = {fitness_function(best, af_ideal, scan_rad, steering_angle_rad, beamwidth_rad)})")
     return best
 
 # Run the GA
 if __name__ == "__main__":
-    best = genetic_algorithm()
+    best = genetic_algorithm(af_ideal, scan_rad, steering_angle_rad, beamwidth_rad)
     best_bit_array = string_to_bit_array(best)
     best_broken_bit_array = au.break_bit_array(best_bit_array, broken_elements, broken_bits, broken_values)
     best_broken_phase_list = au.bit_array_to_phase_list(best_broken_bit_array)
