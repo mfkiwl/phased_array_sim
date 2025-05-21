@@ -46,7 +46,7 @@ def average_losses(n_elements=8, n_bits=4, n_stuck=3, trials=100):
         #mb_nse_quant_list = []
         #mb_nse_broken_list = [] # main beam nse
         #mb_nse_optim_list = []
-        for steering_angle_deg in range(-60, 61):
+        for steering_angle_deg in np.arange(-60, 61, 10):
             steering_angle_rad = np.radians(steering_angle_deg)
             # Calculate all the array factors and nse_s
             ideal_phase_list = au.ideal_phase_list(n_elements, steering_angle_rad)
