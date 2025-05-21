@@ -264,3 +264,4 @@ def normalised_SE(af_ideal, af_actual):
     norm_se = se / np.sum(af_ideal ** 2)
     return norm_se
 
+
