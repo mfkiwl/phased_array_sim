@@ -272,3 +272,9 @@ def PSSL(af_list, scan_rads, steering_angle_rad, beamwidth_rad):
     # Calculate the peak side lobe level
     pssl = np.max(af_list[np.abs(scan_rads - steering_angle_rad) > beamwidth_rad])
     return 20 * np.log10(pssl)
+
+def ISLL(af_list, scan_rads, steering_angle_rad, beamwidth_rad):
+    rad_step = scan_rads[1] - scan_rads[0]
+    # Calculate the integrated side lobe level
+    isll = np.sum(af_list[np.abs(scan_rads - steering_angle_rad) > beamwidth_rad]**2) * rad_step
+    return 10 * np.log10(isll)

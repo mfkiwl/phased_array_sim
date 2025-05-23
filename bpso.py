@@ -1,24 +1,21 @@
-import random
-import antenna_utils as au
 import numpy as np
+import antenna_utils as au
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
-# === CONFIGURATION ===
-POPULATION_SIZE = 50
-MUTATION_RATE = 0.1
-CROSSOVER_RATE = 0.7
-GENERATIONS = 200
-ELITE_FRACTION = 0.10  # Top 10%
-STOP_CRITERION = 0.001  # Stop if fitness improvement is less than this
-STAGNATION_LIMIT = 12  # Number of generations to wait before stopping
-GENE_LENGTH = 32  # Length of binary string
 
+max_iters = 100
 n_elements = 8  # Number of elements in the array
-beamwidth_deg = 14.5  # in degrees
-beamwidth_rad = np.radians(beamwidth_deg)  # Convert to radians
 n_bits = 4  # Number of bits per element
-
+c1 = 1.7  # Cognitive coefficient
+c2 = 2.0  # Social coefficient
+w = 0.35  # Inertia weight
+GENE_LENGTH = n_elements * n_bits  # Total number of bits
+num_particles = 60  # Number of particles in the swarm
+beamwidth_deg = 14.5  # in degrees # This is arcsin(2/N)
+beamwidth_rad = np.radians(beamwidth_deg)  # Beamwidth in radians (HALF)
+STOP_CRITERION = 0.001  # Stop if fitness improvement is less than this
+STAGNATION_LIMIT = 15  # Number of generations to wait before stopping
 
 # === CONVERT STRING TO BIT ARRAY ===
 
@@ -54,96 +51,61 @@ def fitness_function(binary_string, af_ideal, scan_rad, steering_angle_rad, beam
     norm_se = au.normalised_SE(af_ideal, af_broke)
     #peak_beam_power = au.PBP(af_broke, scan_rad, steering_angle_rad)
     #peak_side_lobe_level = au.PSSL(af_broke, scan_rad, steering_angle_rad, beamwidth_rad)
-    #return  - 0.5* peak_beam_power + 2*norm_se + 0.1* peak_side_lobe_level
-    return norm_se
+    #return 0.5* peak_beam_power - 2 * norm_se - 0.1* peak_side_lobe_level
+    return -norm_se
 
-# === GENETIC OPERATORS ===
-def generate_individual(gene_length):
-    #return ''.join(random.choice('01') for _ in range(GENE_LENGTH))
-    #print(np.random.randint(0, 2, GENE_LENGTH))
-    return np.random.randint(0, 2, gene_length)
 
-def mutate(individual, gene_length):
-    #return ''.join(
-    #    bit if random.random() > MUTATION_RATE else '1' if bit == '0' else '0'
-    #    for bit in individual
-    #)
-    new_individual = individual.copy()
-    #print(new_individual)
-    for i in range(gene_length):
-        if random.random() < MUTATION_RATE:
-            new_individual[i] = 1 - new_individual[i]
-    return new_individual
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
 
-def crossover(parent1, parent2, gene_length):
-    n_swap = int(gene_length / 3 )
-    if random.random() < CROSSOVER_RATE:
-        # select indices to swap the bits
-        swap_locations = random.sample(range(gene_length), n_swap)
-        child1 = np.array([
-            parent1[i] if i not in swap_locations else parent2[i]
-            for i in range(gene_length)
-        ])
-        child2 = np.array([
-            parent2[i] if i not in swap_locations else parent1[i]
-            for i in range(gene_length)
-        ])
-        #print(child1)
-        return child1, child2
-    return parent1, parent2
-
-# === MAIN GA LOOP ===
-def genetic_algorithm(af_ideal, scan_rad, steering_angle_rad, beamwidth_rad, broken_elements, broken_bits, broken_values):
-    gene_length = n_elements * n_bits - len(broken_elements)
+def binary_pso(af_ideal, scan_rad, steering_angle_rad, beamwidth_rad, broken_elements, broken_bits, broken_values):
+    num_bits = n_elements * n_bits - len(broken_elements)
     broken_indices_list = broken_indices(broken_elements, broken_bits)
-    population = [generate_individual(gene_length) for _ in range(POPULATION_SIZE)]
+    # w is inertia, c1 is cognitive coefficient, c2 is social coefficient
+    positions = np.random.randint(2, size=(num_particles, num_bits))
+    velocities = np.random.uniform(-4, 4, size=(num_particles, num_bits))
+    pBests = positions.copy()
+    pBest_scores = np.array([fitness_function(p, af_ideal, scan_rad, steering_angle_rad, beamwidth_rad, broken_indices_list, broken_values) for p in positions])
+    gBest = pBests[np.argmax(pBest_scores)]
+    gBest_score = np.max(pBest_scores)
 
     stag_count = 0
-    best_fitness = float('inf')
-    for gen in range(GENERATIONS):
-        fitnesses = [fitness_function(ind, af_ideal, scan_rad, steering_angle_rad, beamwidth_rad, broken_indices_list, broken_values) for ind in population]
-        current_best_fitness = min(fitnesses)
+    previous_best = gBest_score
+
+    for _ in range(max_iters):
         
+        for i in range(num_particles):
+            r1, r2 = np.random.rand(num_bits), np.random.rand(num_bits)
+            cognitive = c1 * r1 * (pBests[i] - positions[i])
+            social = c2 * r2 * (gBest - positions[i])
+            velocities[i] = w * velocities[i] + cognitive + social
+
+            probs = sigmoid(velocities[i])
+            positions[i] = np.where(np.random.rand(num_bits) < probs, 1, 0)
+
+            score = fitness_function(positions[i], af_ideal, scan_rad, steering_angle_rad, beamwidth_rad, broken_indices_list, broken_values)
+            if score > pBest_scores[i]:
+                pBests[i] = positions[i].copy()
+                pBest_scores[i] = score
+                if score > gBest_score:
+                    gBest = positions[i].copy()
+                    gBest_score = score
+        # print(f"Iteration {_+1}/{max_iters}, Best Score: {gBest_score}")
+
         # check stop criterion
-        if abs(current_best_fitness - best_fitness) < STOP_CRITERION:
+        if abs(gBest_score - previous_best) < STOP_CRITERION:
             stag_count += 1
         else:
             stag_count = 0
-            best_fitness = current_best_fitness
+            previous_best = gBest_score
 
         # check stagnation
         if stag_count >= STAGNATION_LIMIT:
             #print(f"Stopping early at generation {gen} due to stagnation.")
             break
 
-        # Select top 10% elite
-        sorted_pop = sorted(zip(population, fitnesses), key=lambda x: x[1])
-        elite_size = max(1, int(ELITE_FRACTION * POPULATION_SIZE))
-        elite = [ind for ind, _ in sorted_pop[:elite_size]]
-        
-        next_generation = elite.copy()
-        
-        while len(next_generation) < POPULATION_SIZE:
-            parent1 = random.choice(elite)
-            parent2 = random.choice(elite)
-            child1, child2 = crossover(parent1, parent2, gene_length)
-            next_generation.append(mutate(child1, gene_length))
-            if len(next_generation) < POPULATION_SIZE:
-                next_generation.append(mutate(child2, gene_length))
+    return inject_broken_bits(gBest, broken_indices_list, broken_values), gBest_score
 
-        population = next_generation
-
-        # Optional: print best result each generation
-        #best = min(population, key=lambda val: fitness_function(val, af_ideal, scan_rad, steering_angle_rad, beamwidth_rad, broken_elements, broken_bits, broken_values))
-        #print(f"Generation {gen}: Best = {best} (Fitness = {fitness_function(best, af_ideal, scan_rad, steering_angle_rad, beamwidth_rad)})")
-
-    # Final best
-    best = min(population, key=lambda val: fitness_function(val, af_ideal, scan_rad, steering_angle_rad, beamwidth_rad, broken_indices_list, broken_values))
-    #print(f"\nBest solution: {best} (Fitness = {fitness_function(best, af_ideal, scan_rad, steering_angle_rad, beamwidth_rad)})")
-
-    return inject_broken_bits(best, broken_indices_list, broken_values)
-
-# Run the GA
 if __name__ == "__main__":
     n_stuck = 5  # Number of bits stuck (0 or 1)
     #broken_elements, broken_bits, broken_values = np.array([0, 3, 5]), np.array([2, 1, 3]), np.array([1, 1, 1])
@@ -165,7 +127,7 @@ if __name__ == "__main__":
     af_broke = au.phase_list_to_af_list(broken_phase_list, scan_rad)
     af_optim = au.phase_list_to_af_list(optim_phase_list, scan_rad)
 
-    best = genetic_algorithm(af_ideal, scan_rad, steering_angle_rad, beamwidth_rad, broken_elements, broken_bits, broken_values)
+    best, _ = binary_pso(af_ideal, scan_rad, steering_angle_rad, beamwidth_rad, broken_elements, broken_bits, broken_values)
     best_bit_array = list_to_bit_array(best)
     best_broken_bit_array = au.break_bit_array(best_bit_array, broken_elements, broken_bits, broken_values)
     best_broken_phase_list = au.bit_array_to_phase_list(best_broken_bit_array)
@@ -181,8 +143,8 @@ if __name__ == "__main__":
     loss_quant = au.normalised_SE(af_ideal, af_quant)
     loss_broken = au.normalised_SE(af_ideal, af_broke)
     loss_optim = au.normalised_SE(af_ideal, af_optim)
-    loss_ga = au.normalised_SE(af_ideal, best_af_broke)
-    loss_text = f"L_quant: {-loss_quant:.2f} dB\nL_broken: {-loss_broken:.2f} dB\nL_optim: {-loss_optim:.2f} dB\nL_ga: {-loss_ga:.2f} dB"
+    loss_bpso = au.normalised_SE(af_ideal, best_af_broke)
+    loss_text = f"L_quant: {-loss_quant:.2f} dB\nL_broken: {-loss_broken:.2f} dB\nL_optim: {-loss_optim:.2f} dB\nL_bpso: {-loss_bpso:.2f} dB"
 
     # Plot the best result
     # === PLOTTING ===
@@ -195,7 +157,7 @@ if __name__ == "__main__":
     line1 = ax.plot(scan_rad, af_quant, lw=1, color='b', label="quantised phases")[0]
     line2 = ax.plot(scan_rad, af_broke, lw=1, color='r', label="broken bit array")[0]
     line_optim = ax.plot(scan_rad, af_optim, lw=1, color='g', label="optimised bit array")[0]
-    line_ga = ax.plot(scan_rad, best_af_broke, lw=1, color='m', label="GA optimised bit array")[0]
+    line_bpso = ax.plot(scan_rad, best_af_broke, lw=1, color='m', label="BPSO optimised bit array")[0]
     text = ax.text(0.05, 0.35, '', transform=ax.transAxes, fontsize=12, color='k')
     ax.set_ylim(0, 1)
     ax.set_ylabel("Array Factor (linear scale)", labelpad=30)
@@ -223,12 +185,12 @@ if __name__ == "__main__":
     dB1 = ax2.plot(scan_deg, af_quant_dB, lw=1, color='b', label="quantised phases")[0]
     dB2 = ax2.plot(scan_deg, af_broke_dB, lw=1, color='r', label="broken bit array")[0]
     dB_optim = ax2.plot(scan_deg, af_optim_dB, lw=1, color='g', label="optimised bit array")[0]
-    dB_ga = ax2.plot(scan_deg, best_af_broke_dB, lw=1, color='m', label="GA optimised bit array")[0]
+    dB_bpso = ax2.plot(scan_deg, best_af_broke_dB, lw=1, color='m', label="BPSO optimised bit array")[0]
     steer_line2 = ax2.plot(np.full_like(dB_list, steering_angle_deg), dB_list, color='k', lw=1, ls='--')[0]
 
     # use the broken array elements and bit positions to name the plot
     broken_elements_str = ', '.join(map(str, broken_elements))
     broken_bits_str = ', '.join(map(str, broken_bits))
     plot_name = f"{broken_elements_str} {broken_bits_str}"
-    plt.savefig("visuals\\ga_optim\\"+plot_name, dpi=300, bbox_inches='tight')
+    plt.savefig("visuals\\bpso_optim\\"+plot_name, dpi=300, bbox_inches='tight')
     plt.show()
