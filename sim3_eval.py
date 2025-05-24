@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
-import antenna_utils as au
+import utils.antenna_utils as au
 
 '''
 Evaluates the performance of various bit patterns / optimisation techniques.

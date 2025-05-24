@@ -1,5 +1,5 @@
 import numpy as np
-from closest_int import closest_integer
+from utils.closest_int import closest_integer
 
 def amplitude_to_dB(amplitude):
     if amplitude == 0:
@@ -270,11 +270,31 @@ def PBP(af_list, scan_rads, steering_angle_rad):
 
 def PSSL(af_list, scan_rads, steering_angle_rad, beamwidth_rad):
     # Calculate the peak side lobe level
-    pssl = np.max(af_list[np.abs(scan_rads - steering_angle_rad) > beamwidth_rad])
-    return 20 * np.log10(pssl)
+    psll_linear = np.max(af_list[np.abs(scan_rads - steering_angle_rad) > beamwidth_rad])
+    psll_dB = 20 * np.log10(psll_linear)
+    main_beam_dB = PBP(af_list, scan_rads, steering_angle_rad)
+    return psll_dB - main_beam_dB
 
 def ISLL(af_list, scan_rads, steering_angle_rad, beamwidth_rad):
+    """
+    Calculate the Integrated Side Lobe Level (ISLL) for a given antenna factor list.
+    
+    Parameters:
+    af_list (np.ndarray): Antenna factor values.
+    scan_rads (np.ndarray): Scan angles in radians.
+    steering_angle_rad (float): Steering angle in radians.
+    beamwidth_rad (float): Beamwidth in radians.
+    
+    Returns:
+    float: ISLL in dB.
+    """
+    # Calculate the step size in radians
     rad_step = scan_rads[1] - scan_rads[0]
+    
     # Calculate the integrated side lobe level
-    isll = np.sum(af_list[np.abs(scan_rads - steering_angle_rad) > beamwidth_rad]**2) * rad_step
-    return 10 * np.log10(isll)
+    isl = np.sum(af_list[np.abs(scan_rads - steering_angle_rad) > beamwidth_rad]**2) * rad_step
+
+    # calculate the integrated main beam level
+    integrated_main_beam = np.sum(af_list[np.abs(scan_rads - steering_angle_rad) <= beamwidth_rad]**2) * rad_step
+    
+    return 10 * np.log10(isl / integrated_main_beam)

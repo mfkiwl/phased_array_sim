@@ -1,10 +1,10 @@
-import antenna_utils as au
+import utils.antenna_utils as au
 import numpy as np
 import matplotlib.pyplot as plt
 import time
 from matplotlib.gridspec import GridSpec
-import ga
-import bpso
+import utils.ga as ga
+import utils.bpso as bpso
 import random
 import pandas as pd
 
@@ -120,8 +120,30 @@ def average_times(n_elements=8, n_bits=4, n_stuck=3, trials=100):
     return avg_time_elo, avg_time_ga, avg_time_bpso
 
 if __name__ == "__main__":
+    import argparse
+
+    def parse_args() -> argparse.Namespace:
+        parser = argparse.ArgumentParser(
+            description="Process an input file and save results."
+        )
+
+        # ── positional arguments ──────────────────────────────────────
+        parser.add_argument("-id",  type=str, default="", help="ID for the Path to the output files.")
+        parser.add_argument(
+            "-n_trials", type=int, default=100, help="Number of trials per n_stuck_bits."
+        )
+        return parser.parse_args()
+
+    # parse the command line arguments
+    args = parse_args()
+    id = args.id
+    n_trials = args.n_trials
+
+    # --- Path to the output files ---
+    output_data = f"ult_eval_data\\average_times_{id}.csv"
+
     # Run the average_times function and print the results
-    avg_time_elo, avg_time_ga, avg_time_bpso = average_times(trials=4)
+    avg_time_elo, avg_time_ga, avg_time_bpso = average_times(trials=n_trials)
     print(f"Average time taken by ELO: {avg_time_elo:.2f} ms")
     print(f"Average time taken by GA: {avg_time_ga:.2f} ms")
     print(f"Average time taken by BPSO: {avg_time_bpso:.2f} ms")
@@ -131,5 +153,5 @@ if __name__ == "__main__":
         'Average Time (ms)': [avg_time_elo, avg_time_ga, avg_time_bpso]
     }
     df = pd.DataFrame(data)
-    df.to_csv('average_times.csv', index=False)
+    df.to_csv(output_data, index=False)
     print("Average times saved to average_times.csv")

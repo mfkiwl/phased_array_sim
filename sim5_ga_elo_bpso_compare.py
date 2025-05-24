@@ -1,10 +1,53 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
-import antenna_utils as au
-import ga
+import utils.antenna_utils as au
+import utils.ga as ga
 import pandas as pd
-import bpso
+import utils.bpso as bpso
+import argparse
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Process an input file and save results."
+    )
+
+    # ── positional arguments ──────────────────────────────────────
+    parser.add_argument("-id",  type=str, default="", help="ID for the Path to the output files.")
+    parser.add_argument(
+        "-n_trials", type=int, default=100, help="Number of trials per n_stuck_bits."
+    )
+    parser.add_argument(
+        "-upper_bound", type=int, default=32, help="Maximum number of stuck bits."
+    )
+    parser.add_argument(
+        "-lower_bound", type=int, default=0, help="Minimum number of stuck bits."
+    )
+    '''
+    parser.add_argument("output_data",  help="Path to the output data file.")
+    parser.add_argument("output_plot", help="Path to the output plot.")
+
+    # ── optional flags & switches ─────────────────────────────────
+    parser.add_argument(
+        "-t", "--threshold", type=float, default=0.5,
+        help="Detection threshold (default: 0.5)"
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true",
+        help="Print progress messages."
+    )
+    '''
+    return parser.parse_args()
+
+# parse the command line arguments
+args = parse_args()
+id = args.id
+n_trials = args.n_trials
+upper_bound = args.upper_bound
+lower_bound = args.lower_bound
+# --- Path to the output files ---
+output_data = f"ult_eval_data\\ga_elo_bpso_compare_{id}.csv"
+output_plot = f"visuals\\evals\\ga_elo_bpso_compare_{id}.png"
 
 
 # --- Parameters ---
@@ -23,22 +66,27 @@ def average_losses(n_elements=8, n_bits=4, n_stuck=3, trials=100):
     total_nse_broken = 0
     total_pssl_broken = 0
     total_pbp_broken = 0
+    total_isll_broken = 0
     #total_mb_nse_broken = 0
     total_nse_elo = 0
     total_pssl_elo = 0
     total_pbp_elo = 0
+    total_isll_elo = 0
     #total_mb_nse_elo = 0
     total_nse_ga = 0
     total_pssl_ga = 0
     total_pbp_ga = 0
+    total_isll_ga = 0
     #total_mb_nse_ga = 0
     total_nse_bpso = 0
     total_pssl_bpso = 0
     total_pbp_bpso = 0
+    total_isll_bpso = 0
     #total_mb_nse_bpso = 0
     for i in range(trials):
         broken_elements, broken_bits, broken_values = au.random_select_broken_bits(n_elements, n_bits, n_stuck, mode=0)
         #nse_quant_list = [] # total nse
+        '''
         nse_broken_list = []
         nse_elo_list = []
         nse_ga_list = []
@@ -51,6 +99,7 @@ def average_losses(n_elements=8, n_bits=4, n_stuck=3, trials=100):
         pbp_elo_list = []
         pbp_ga_list = []
         pbp_bpso_list = []
+        '''
         #mb_nse_quant_list = []
         #mb_nse_broken_list = [] # main beam nse
         #mb_nse_elo_list = []
@@ -101,7 +150,12 @@ def average_losses(n_elements=8, n_bits=4, n_stuck=3, trials=100):
         pbp_elo = au.PBP(af_elo, scan_rad, steering_angle_rad)
         pbp_ga = au.PBP(af_ga, scan_rad, steering_angle_rad)
         pbp_bpso = au.PBP(af_bpso, scan_rad, steering_angle_rad)
+        isll_broken = au.ISLL(af_broken, scan_rad, steering_angle_rad, beamwidth_rad)
+        isll_elo = au.ISLL(af_elo, scan_rad, steering_angle_rad, beamwidth_rad)
+        isll_ga = au.ISLL(af_ga, scan_rad, steering_angle_rad, beamwidth_rad)
+        isll_bpso = au.ISLL(af_bpso, scan_rad, steering_angle_rad, beamwidth_rad)
 
+        '''
         #nse_quant_list.append(nse_quant)
         nse_broken_list.append(nse_broken)
         nse_elo_list.append(nse_elo)
@@ -130,6 +184,23 @@ def average_losses(n_elements=8, n_bits=4, n_stuck=3, trials=100):
         total_pbp_elo += np.mean(pbp_elo_list)
         total_pbp_ga += np.mean(pbp_ga_list)
         total_pbp_bpso += np.mean(pbp_bpso_list)
+        '''
+        total_nse_broken += nse_broken
+        total_nse_elo += nse_elo
+        total_nse_ga += nse_ga
+        total_nse_bpso += nse_bpso
+        total_pssl_broken += pssl_broken
+        total_pssl_elo += pssl_elo
+        total_pssl_ga += pssl_ga
+        total_pssl_bpso += pssl_bpso
+        total_pbp_broken += pbp_broken
+        total_pbp_elo += pbp_elo
+        total_pbp_ga += pbp_ga
+        total_pbp_bpso += pbp_bpso
+        total_isll_broken += isll_broken
+        total_isll_elo += isll_elo
+        total_isll_ga += isll_ga
+        total_isll_bpso += isll_bpso
 
         print(f"Trial {i+1}/{trials} complete")
 
@@ -148,13 +219,17 @@ def average_losses(n_elements=8, n_bits=4, n_stuck=3, trials=100):
     avg_pbp_elo = total_pbp_elo / trials
     avg_pbp_ga = total_pbp_ga / trials
     avg_pbp_bpso = total_pbp_bpso / trials
+    avg_isll_broken = total_isll_broken / trials
+    avg_isll_elo = total_isll_elo / trials
+    avg_isll_ga = total_isll_ga / trials
+    avg_isll_bpso = total_isll_bpso / trials
 
-    return avg_nse_broken, avg_nse_elo, avg_nse_ga, avg_nse_bpso, avg_pssl_broken, avg_pssl_elo, avg_pssl_ga, avg_pssl_bpso, avg_pbp_broken, avg_pbp_elo, avg_pbp_ga, avg_pbp_bpso
+    return avg_nse_broken, avg_nse_elo, avg_nse_ga, avg_nse_bpso, avg_pssl_broken, avg_pssl_elo, avg_pssl_ga, avg_pssl_bpso, avg_pbp_broken, avg_pbp_elo, avg_pbp_ga, avg_pbp_bpso, avg_isll_broken, avg_isll_elo, avg_isll_ga, avg_isll_bpso
 
 
 # --- Main function ---
-n_bits_broken_list = np.arange(0, 33)
-n_trials = 100
+n_bits_broken_list = np.arange(lower_bound, upper_bound+1)
+n_trials = n_trials
 #avg_nse_quantised_list = []
 #avg_mb_nse_quantised_list = []
 avg_nse_broken_list = []
@@ -169,9 +244,13 @@ avg_pbp_broken_list = []
 avg_pbp_elo_list = []
 avg_pbp_ga_list = []
 avg_pbp_bpso_list = []
+avg_isll_broken_list = []
+avg_isll_elo_list = []
+avg_isll_ga_list = []
+avg_isll_bpso_list = []
 for n_broken_bits in n_bits_broken_list:
     print(f"Number of stuck bits: {n_broken_bits}")
-    avg_nse_broken, avg_nse_elo, avg_nse_ga, avg_nse_bpso, avg_pssl_broken, avg_pssl_elo, avg_pssl_ga, avg_pssl_bpso, avg_pbp_broken, avg_pbp_elo, avg_pbp_ga, avg_pbp_bpso = average_losses(
+    avg_nse_broken, avg_nse_elo, avg_nse_ga, avg_nse_bpso, avg_pssl_broken, avg_pssl_elo, avg_pssl_ga, avg_pssl_bpso, avg_pbp_broken, avg_pbp_elo, avg_pbp_ga, avg_pbp_bpso, avg_isll_broken, avg_isll_elo, avg_isll_ga, avg_isll_bpso = average_losses(
         n_elements=n_elements, n_bits=n_bits, n_stuck=n_broken_bits, trials=n_trials)
     #avg_nse_quantised_list.append(avg_nse_quantised)
     #avg_mb_nse_quantised_list.append(avg_mb_nse_quantised)
@@ -187,6 +266,10 @@ for n_broken_bits in n_bits_broken_list:
     avg_pbp_elo_list.append(avg_pbp_elo)
     avg_pbp_ga_list.append(avg_pbp_ga)
     avg_pbp_bpso_list.append(avg_pbp_bpso)
+    avg_isll_broken_list.append(avg_isll_broken)
+    avg_isll_elo_list.append(avg_isll_elo)
+    avg_isll_ga_list.append(avg_isll_ga)
+    avg_isll_bpso_list.append(avg_isll_bpso)
 
 # save the results to a CSV file
 df = pd.DataFrame({
@@ -201,10 +284,14 @@ df = pd.DataFrame({
     'avg_pbp_broken': avg_pbp_broken_list,
     'avg_pbp_elo': avg_pbp_elo_list,
     'avg_pbp_ga': avg_pbp_ga_list,
-    'avg_pbp_bpso': avg_pbp_bpso_list
+    'avg_pbp_bpso': avg_pbp_bpso_list,
+    'avg_isll_broken': avg_isll_broken_list,
+    'avg_isll_elo': avg_isll_elo_list,
+    'avg_isll_ga': avg_isll_ga_list,
+    'avg_isll_bpso': avg_isll_bpso_list,
 })
-df.to_csv("ga_elo_bpso_compare.csv")
-
+df.to_csv(output_data)
+'''
 # --- Plotting ---
 n_bits_broken_list = n_bits_broken_list / (n_elements * n_bits)  # normalise the number of stuck bits
 # 3 subplots, one for NSe, one for PSSL and one for PBP
@@ -241,5 +328,6 @@ axs[2].set_ylabel('PBP [dB]')
 axs[2].legend()
 axs[2].grid()
 # Save the figure
-fig.savefig(f"visuals\\evals\\sim5_GAELOBPSO.png", dpi=300, bbox_inches='tight')
+fig.savefig(output_plot, dpi=300, bbox_inches='tight')
 plt.show()
+'''

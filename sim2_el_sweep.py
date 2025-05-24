@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.animation as animation
-import antenna_utils as au
+import utils.antenna_utils as au
 from matplotlib.gridspec import GridSpec
 
 # --- Parameters ---

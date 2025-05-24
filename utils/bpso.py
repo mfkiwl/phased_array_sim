@@ -1,5 +1,5 @@
 import numpy as np
-import antenna_utils as au
+import utils.antenna_utils as au
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
