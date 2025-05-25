@@ -7,6 +7,9 @@ import pandas as pd
 import utils.bpso as bpso
 import argparse
 
+n_elements = 8  # Number of elements in the array
+n_bits = 4  # Number of bits per element
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Process an input file and save results."
@@ -23,6 +26,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-lower_bound", type=int, default=0, help="Minimum number of stuck bits."
     )
+    parser.add_argument(
+        "-fail_mode", type=int, default=0,
+        help="Mode for selecting broken bits: 0 for random, 1 for MSB."
+    )
+
     '''
     parser.add_argument("output_data",  help="Path to the output data file.")
     parser.add_argument("output_plot", help="Path to the output plot.")
@@ -45,14 +53,16 @@ id = args.id
 n_trials = args.n_trials
 upper_bound = args.upper_bound
 lower_bound = args.lower_bound
+fail_mode = args.fail_mode
+if fail_mode == 1:
+    upper_bound = n_elements
 # --- Path to the output files ---
-output_data = f"ult_eval_data\\ga_elo_bpso_compare_{id}.csv"
+output_data = f"ult_eval_msb\\ga_elo_bpso_compare_{id}.csv"
 output_plot = f"visuals\\evals\\ga_elo_bpso_compare_{id}.png"
 
 
 # --- Parameters ---
-n_elements = 8  # Number of elements in the array
-n_bits = 4  # Number of bits per element
+
 #n_stuck = 3  # Number of bits stuck (0 or 1)
 scan_deg = np.arange(-90, 91)  # Scan angles from -90° to +90° in degrees
 scan_rad = np.radians(scan_deg)  # Scan angles from -90° to +90° in radians
@@ -84,7 +94,7 @@ def average_losses(n_elements=8, n_bits=4, n_stuck=3, trials=100):
     total_isll_bpso = 0
     #total_mb_nse_bpso = 0
     for i in range(trials):
-        broken_elements, broken_bits, broken_values = au.random_select_broken_bits(n_elements, n_bits, n_stuck, mode=0)
+        broken_elements, broken_bits, broken_values = au.random_select_broken_bits(n_elements, n_bits, n_stuck, mode=fail_mode)
         #nse_quant_list = [] # total nse
         '''
         nse_broken_list = []

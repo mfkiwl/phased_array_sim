@@ -162,6 +162,25 @@ def phase_list_to_af_list(phase_list, scan_angles=np.deg2rad(np.arange(0, 361, 1
         af_list[k] = af
     return np.abs(af_list) / len(phase_list)  # Normalise the antenna factor
 
+def AF_planar_linear_beamform(M, N, theta_grid, phi_grid, phase_list):
+    # beamforming in the x direction, on theta??
+    # Calculate Array Factor (AF)
+    AF = np.zeros_like(theta_grid, dtype=complex)
+
+    for m in range(M):
+        for n in range(N):
+            # Phase shift for element (m, n)
+            phase = (
+                m * np.pi * np.sin(theta_grid) * np.cos(phi_grid) + 
+                n * np.pi * np.sin(theta_grid) * np.sin(phi_grid) +
+                phase_list[m]  # Add the ideal phase for this element
+            )
+            AF += np.exp(1j * phase)
+
+    # Magnitude and normalization
+    AF_mag = np.abs(AF) / (N * M)  # Normalize by number of elements
+    return AF_mag
+
 
 ## Breaking and fixing the array
 def random_select_broken_bits(n_elements, n_bits, n_broken_bits, mode=0):
@@ -182,7 +201,10 @@ def random_select_broken_bits(n_elements, n_bits, n_broken_bits, mode=0):
     elif mode == 1:
         # select 1 bit from each element
         broken_elements = np.random.choice(n_elements, n_broken_bits, replace=False)
-        broken_bits = np.random.choice(n_bits, n_broken_bits, replace=True)
+        broken_elements = np.sort(broken_elements)  # sort the elements
+        #broken_bits = np.random.choice(n_bits, n_broken_bits, replace=True)
+        # choose the most significant bits
+        broken_bits = np.full(n_broken_bits, n_bits - 1)
         broken_values = [np.random.choice([0, 1]) for _ in range(n_broken_bits)]
     return broken_elements, broken_bits, broken_values
 

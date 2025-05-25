@@ -9,7 +9,7 @@ n_elements = 8  # Number of elements in the array
 n_bits = 4  # Number of bits per element
 n_stuck = 3  # Number of bits stuck (0 or 1)
 
-broken_elements, broken_bits, broken_values = au.random_select_broken_bits(n_elements, n_bits, n_stuck, mode=0)
+broken_elements, broken_bits, broken_values = au.random_select_broken_bits(n_elements, n_bits, n_stuck, mode=1)
 
 
 

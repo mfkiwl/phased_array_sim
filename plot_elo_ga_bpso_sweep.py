@@ -18,9 +18,9 @@ names:
 Each file has an initial index column, with no header. The rest of the columns are:
 avg_nse_broken,avg_nse_elo,avg_nse_ga,avg_nse_bpso,avg_pssl_broken,avg_pssl_elo,avg_pssl_ga,avg_pssl_bpso,avg_pbp_broken,avg_pbp_elo,avg_pbp_ga,avg_pbp_bpso
 '''
-folder = 'ult_eval_data'
-file_names = [f'ga_elo_bpso_compare_{i}.csv' for i in range(11, 19)]
-output_file_name = 'visuals\\ga_elo_bpso_compare_average.png'
+folder = 'ult_eval_msb'
+file_names = [f'ga_elo_bpso_compare_{i}.csv' for i in range(1, 9)]
+output_file_name = 'visuals\\ga_elo_bpso_compare_average_msb.png'
 
 data_frames = []
 for file_name in file_names:
@@ -56,9 +56,9 @@ fig.suptitle(f"Comparing ELO, GA and BPSO")
 fig.subplots_adjust(hspace=0.4)  # Adjust space between subplots
 #axs[0].plot(stuck_bits, avg_nse_quantised_list, label='Quantised', color='blue')
 axs[0].plot(stuck_bits, avg_nse_broken_list, label='Broken', color='red')
-axs[0].plot(stuck_bits, avg_nse_elo_list, label='ELO', color='green')
-axs[0].plot(stuck_bits, avg_nse_ga_list, label='GA', color='purple')
-axs[0].plot(stuck_bits, avg_nse_bpso_list, label='BPSO', color='cyan')
+axs[0].plot(stuck_bits, avg_nse_elo_list, label='ELO', color='blue')
+axs[0].plot(stuck_bits, avg_nse_ga_list, label='GA', color='magenta')
+axs[0].plot(stuck_bits, avg_nse_bpso_list, label='BPSO', color='green')
 #axs[0].set_title('Total normalised_SE')
 #axs[0].set_xlabel('Proportion of Stuck Bits')
 axs[0].set_ylabel('$MSE_{norm}$')
@@ -66,28 +66,28 @@ axs[0].legend()
 axs[0].grid()
 #axs[1].plot(stuck_bits, avg_mb_nse_quantised_list, label='Quantised', color='blue')
 axs[1].plot(stuck_bits, avg_pssl_broken_list, label='Broken', color='red')
-axs[1].plot(stuck_bits, avg_pssl_elo_list, label='ELO', color='green')
-axs[1].plot(stuck_bits, avg_pssl_ga_list, label='GA', color='purple')
-axs[1].plot(stuck_bits, avg_pssl_bpso_list, label='BPSO', color='cyan')
+axs[1].plot(stuck_bits, avg_pssl_elo_list, label='ELO', color='blue')
+axs[1].plot(stuck_bits, avg_pssl_ga_list, label='GA', color='magenta')
+axs[1].plot(stuck_bits, avg_pssl_bpso_list, label='BPSO', color='green')
 #axs[1].set_title('Main Beam PSSL')
 #axs[1].set_xlabel('Proportion of Stuck Bits')
 axs[1].set_ylabel('PSLL [dB]')
 axs[1].legend()
 axs[1].grid()
 #axs[2].plot(stuck_bits, avg_mb_nse_quantised_list, label='Quantised', color='blue')
-axs[2].plot(stuck_bits, avg_pssl_broken_list, label='Broken', color='red')
-axs[2].plot(stuck_bits, avg_pssl_elo_list, label='ELO', color='green')
-axs[2].plot(stuck_bits, avg_pssl_ga_list, label='GA', color='purple')
-axs[2].plot(stuck_bits, avg_pssl_bpso_list, label='BPSO', color='cyan')
-#axs[2].set_title('Main Beam PSSL')
+axs[2].plot(stuck_bits, avg_isll_broken_list, label='Broken', color='red')
+axs[2].plot(stuck_bits, avg_isll_elo_list, label='ELO', color='blue')
+axs[2].plot(stuck_bits, avg_isll_ga_list, label='GA', color='magenta')
+axs[2].plot(stuck_bits, avg_isll_bpso_list, label='BPSO', color='green')
+#axs[2].set_title('Main Beam islL')
 #axs[2].set_xlabel('Proportion of Stuck Bits')
-axs[2].set_ylabel('PSLL [dB]')
+axs[2].set_ylabel('ISLL [dB]')
 axs[2].legend()
 axs[2].grid()
 axs[3].plot(stuck_bits, avg_pbp_broken_list, label='Broken', color='red')
-axs[3].plot(stuck_bits, avg_pbp_elo_list, label='ELO', color='green')
-axs[3].plot(stuck_bits, avg_pbp_ga_list, label='GA', color='purple')
-axs[3].plot(stuck_bits, avg_pbp_bpso_list, label='BPSO', color='cyan')
+axs[3].plot(stuck_bits, avg_pbp_elo_list, label='ELO', color='blue')
+axs[3].plot(stuck_bits, avg_pbp_ga_list, label='GA', color='magenta')
+axs[3].plot(stuck_bits, avg_pbp_bpso_list, label='BPSO', color='green')
 #axs[3].set_title('PBP')
 axs[3].set_xlabel('Proportion of Stuck Bits')
 axs[3].set_ylabel('PBP [dB]')
