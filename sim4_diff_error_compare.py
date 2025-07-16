@@ -24,8 +24,8 @@ gs = GridSpec(2, 1, height_ratios=[6, 3])  # 6 for ax, 3 for ax2
 ax = fig.add_subplot(gs[0], polar=True)
 # add the plots
 line0 = ax.plot([], [], lw=1, color='k', label="ideal array factor")[0]
-line1 = ax.plot([], [], lw=1, color='b', label="random break")[0]
-line2 = ax.plot([], [], lw=1, color='r', label="break most sig per el")[0]
+line1 = ax.plot([], [], lw=1, color='orange', label="random failures")[0]
+line2 = ax.plot([], [], lw=1, color='r', label="MSB failures")[0]
 text = ax.text(0.05, 0.35, '', transform=ax.transAxes, fontsize=12, color='k')
 ax.set_ylim(0, 1)
 ax.set_ylabel("Array Factor (linear scale)", labelpad=30)
@@ -48,8 +48,8 @@ ax2.set_xlabel("Angle ($^\\circ$)")
 ax2.set_ylabel("Relative Gain (dB)")
 ax2.grid()
 dB0 = ax2.plot([], [], lw=1, color='k', label="ideal array factor")[0]
-dB1 = ax2.plot([], [], lw=1, color='b', label="random break")[0]
-dB2 = ax2.plot([], [], lw=1, color='r', label="break most sig per el")[0]
+dB1 = ax2.plot([], [], lw=1, color='orange', label="random failures")[0]
+dB2 = ax2.plot([], [], lw=1, color='r', label="MSB failures")[0]
 steer_line2 = ax2.plot([], [], color='k', lw=1, ls='--')[0]
 dB_list = np.linspace(-50, 0, 100)  # dB scale
 
@@ -111,8 +111,8 @@ def animate(i):
     loss01 = af0_dB[angle_index] - af1_dB[angle_index]
     loss02 = af0_dB[angle_index] - af2_dB[angle_index]
     # annotate the value
-    text.set_text(f"KL_rand: {kl01:.2f}\nKL_most_sig: {kl02:.2f}\n"
-                  f"L_rand: {-loss01:.2f} dB\nL_most_sig: {-loss02:.2f} dB")
+    #text.set_text(f"KL_rand: {kl01:.2f}\nKL_most_sig: {kl02:.2f}\n"
+    #              f"L_rand: {-loss01:.2f} dB\nL_most_sig: {-loss02:.2f} dB")
 
     # title
     ax.set_title(f"{n_stuck} bits stuck, Steering Angle: {steering_angle_deg:.1f}°", va='bottom', pad=30)
